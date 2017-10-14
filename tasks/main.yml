@@ -1,0 +1,274 @@
+#
+# setup PHP and PHP-FPM with APCu support
+#
+- name: role brief
+  debug:
+    msg:
+      - php_fpm_session_type - {{ php_fpm_session_type }}
+      - php_slack_channel - {{ php_slack_channel }}
+      - php_slack_username - {{ php_slack_username }}
+      - php_slack_hook - {{ php_slack_hook }}
+      - php_slack_script_dest - {{ php_slack_script_dest }}
+  tags: debug
+
+- name: install PHP
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ php_packages }}"
+  tags:
+    - php
+
+- name: set PHP parameters
+  lineinfile:
+    dest: /etc/php.ini
+    regexp: "^{{ item.param }}"
+    insertafter: "^;{{ item.param }}"
+    line: "{{ item.param }} = {{ item.value }}"
+  with_items:
+    - { param: 'cgi.fix_pathinfo', value: '0' }
+    - { param: 'expose_php', value: 'Off' }
+    - { param: 'post_max_size', value: '16M' }
+    - { param: 'upload_max_filesize', value: '16M' }
+    - { param: 'session.gc_maxlifetime', value: '86401' }
+  tags:
+    - php
+    - php_config
+
+- name: set PHP OpCache parameters
+  lineinfile:
+    dest: /etc/php.d/10-opcache.ini
+    regexp: "^{{ item.param }}"
+    insertafter: "^;{{ item.param }}"
+    line: "{{ item.param }} = {{ item.value }}"
+  with_items:
+    - { param: 'opcache.memory_consumption', value: '128' }
+    - { param: 'opcache.interned_strings_buffer', value: '8' }
+    - { param: 'opcache.max_accelerated_files', value: '4000' }
+    - { param: 'opcache.revalidate_freq', value: '60' }
+    - { param: 'opcache.save_comments', value: '0' }
+    - { param: 'opcache.fast_shutdown', value: '1' }
+    - { param: 'opcache.enable_file_override', value: '1' }
+    - { param: 'opcache.error_log', value: '/var/log/php-fpm/php-opcache.error.log' }
+  tags:
+    - php
+    - php_config
+
+- name: set PHP-FPM parameters
+  lineinfile:
+    dest: /etc/php-fpm.conf
+    regexp: "^{{ item.param }}"
+    insertafter: "^;{{ item.param }}"
+    line: "{{ item.param }} = {{ item.value }}"
+  with_items:
+    - { param: 'error_log', value: '/var/log/php-fpm/error.log' }
+    - { param: 'log_level', value: 'error' }
+    - { param: 'emergency_restart_threshold', value: '10' }
+    - { param: 'emergency_restart_interval', value: '1m' }
+    - { param: 'process_control_timeout', value: '5' }
+  tags:
+    - php
+    - fpm
+    - fpm_config
+
+- name: create scripts directory
+  file:
+    path: "{{ php_slack_script_dest }}/"
+    state: directory
+  when: php_slack_hook != "https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX"
+  tags:
+    - php
+    - fpm
+    - fpm_cron
+
+- name: add FPM memory monitor
+  template:
+    src: fpm-mem-check.sh
+    dest: "{{ php_slack_script_dest }}/fpm-mem-check.sh"
+    mode: 755
+  when: php_slack_hook != "https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX"
+  tags:
+    - php
+    - fpm
+    - fpm_cron
+
+- name: add FPM memory monitor to cron
+  cron:
+    name: monitor php-fpm memory usage
+    minute: "*"
+    hour: "*"
+    day: "*"
+    job: "bash {{ php_slack_script_dest }}/fpm-mem-check.sh >/dev/null 2>&1"
+  when: php_slack_hook != "https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX"
+  tags:
+    - php
+    - fpm
+    - fpm_cron
+
+#
+# http://myshell.co.uk/blog/2012/07/adjusting-child-processes-for-php-fpm-nginx/
+#
+# How average one fpm process consume memory:
+# ps --no-headers -o "rss,cmd" -C php-fpm | awk '{ sum+=$1 } END { printf ("%d%s\n", sum/NR/1024,"M") }'
+#
+# Based on average fpm memory usage, calculate how many max_children can be used:
+# echo "pm.max_children = $(( $(awk '/MemTotal:/ { printf "%d\n", ($2*0.66) }' /proc/meminfo) / $(ps --no-headers -o "rss,cmd" -C php-fpm | awk '{ sum+=$1 } END { printf ("%d\n", sum/NR) }') ))"
+#
+# How many fpm processes at the moment:
+# pgrep -c php-fpm
+- name: set PHP-FPM pool parameters
+  lineinfile:
+    dest: /etc/php-fpm.d/www.conf
+    regexp: '^{{ item.param|replace("[", "\[")|replace("]", "\]") }} *?='
+    insertafter: '^;{{ item.param|replace("[", "\[")|replace("]", "\]") }} *?='
+    line: "{{ item.param }} = {{ item.value }}"
+  with_items:
+    - { param: 'listen', value: '127.0.0.1:9000' }
+    - { param: 'listen.owner', value: '{{ http_user }}' }
+    - { param: 'listen.group', value: '{{ http_user }}' }
+    - { param: 'user', value: '{{ http_user }}' }
+    - { param: 'group', value: '{{ http_user }}' }
+    - { param: 'pm', value: 'dynamic' }
+    - { param: 'pm.max_children', value: '640' }
+    - { param: 'pm.start_servers', value: '12' }
+    - { param: 'pm.min_spare_servers', value: '12' }
+    - { param: 'pm.max_spare_servers', value: '24' }
+    - { param: 'pm.process_idle_timeout', value: '10s' }
+    - { param: 'pm.max_requests', value: '500' }
+    - { param: 'pm.status_path', value: '/fpm-status-$pool' }
+    - { param: 'ping.path', value: '/ping-$pool' }
+    - { param: 'slowlog', value: '/var/log/php-fpm/$pool-slow.log' }
+    # - { param: 'request_slowlog_timeout', value: '24s' }
+    - { param: 'php_value[soap.wsdl_cache_dir]', value: '/var/lib/php-fpm-nginx/wsdlcache' }
+  register: fpm_config_updated
+  notify:
+    - reload php-fpm
+  tags:
+    - php
+    - fpm
+    - fpm_config
+
+- name: set PHP-FPM session parameters (files)
+  lineinfile:
+    dest: /etc/php-fpm.d/www.conf
+    regexp: '^{{ item.param|replace("[", "\[")|replace("]", "\]") }} *?='
+    insertafter: '^;{{ item.param|replace("[", "\[")|replace("]", "\]") }} *?='
+    line: "{{ item.param }} = {{ item.value }}"
+  with_items:
+    # Use files for PHP sessions
+    - { param: 'php_value[session.save_handler]', value: 'files' }
+    - { param: 'php_value[session.save_path]', value: '/var/lib/php-fpm-nginx/session' }
+  register: fpm_config_updated
+  when: php_fpm_session_type == "file"
+  notify:
+    - reload php-fpm
+  tags:
+    - php
+    - fpm
+    - fpm_config
+
+- name: set PHP-FPM session parameters (redis)
+  lineinfile:
+    dest: /etc/php-fpm.d/www.conf
+    regexp: '^{{ item.param|replace("[", "\[")|replace("]", "\]") }} *?='
+    insertafter: '^;{{ item.param|replace("[", "\[")|replace("]", "\]") }} *?='
+    line: "{{ item.param }} = {{ item.value }}"
+  with_items:
+    # Use Redis for PHP sessions
+    # redis(30u) is required for this config
+    - { param: 'php_value[session.save_handler]', value: 'redis' }
+    - { param: 'php_value[session.save_path]', value: 'tcp://127.0.0.1:6379' }
+  register: fpm_config_updated
+  when: php_fpm_session_type == "redis"
+  notify:
+    - reload php-fpm
+  tags:
+    - php
+    - fpm
+    - fpm_config
+
+# NOTE: Disable multiple pools support since we switched from sock to TCP listen
+# - name: copy PHP-FPM pool configs
+#   synchronize: src=/etc/php-fpm.d/www.conf
+#                dest=/etc/php-fpm.d/www{{ item }}.conf
+#                mode=pull
+#   delegate_to: "{{ inventory_hostname }}"
+#   with_items: "{{ php_fpm_pools }}"
+#   when: fpm_config_updated.changed
+#   tags:
+#     - php
+#     - fpm
+#     - fpm_config
+# #
+# - name: rename PHP-FPM pool name
+#   lineinfile:
+#     dest: /etc/php-fpm.d/www{{ item }}.conf
+#     # match all [www**]
+#     regexp: '^\[www.*?\]'
+#     line: "[www{{ item }}]"
+#   with_items: "{{ php_fpm_pools }}"
+#   when: fpm_config_updated.changed
+#   tags:
+#     - php
+#     - fpm
+#     - fpm_config
+
+- name: create PHP-FPM session / cache directories
+  file:
+    path: /var/lib/php-fpm-nginx/{{ item }}/
+    state: directory
+    owner: nginx
+    group: nginx
+  with_items:
+    - session
+    - wsdlcache
+  tags:
+    - php
+    - fpm
+
+- name: enable PHP-FPM
+  service:
+    name: php-fpm
+    state: started
+    enabled: yes
+  tags:
+    - php
+    - fpm
+
+- name: reload php-fpm via cron
+  cron:
+    name: "reload php-fpm"
+    minute: "0"
+    hour: "4"
+    day: "*/3"
+    job: "systemctl reload php-fpm"
+  tags:
+    - php
+    - fpm
+    - fpm_config
+
+- name: download opcache.php
+  get_url:
+    url: https://raw.github.com/rlerdorf/opcache-status/master/opcache.php
+    dest: /srv/www/{{ item }}/public_html/opcache.php
+    owner: "{{ http_user }}"
+    group: "{{ http_user }}"
+    mode: 0644
+  with_items: "{{ nginx_sites[inventory_hostname] | default([]) }}"
+  notify: update permissions
+  tags:
+    - php
+    - opcache
+
+- name: copy apcu-panel.php to public directories
+  synchronize:
+    src: /usr/share/apcu-panel/index.php
+    dest: /srv/www/{{ item }}/public_html/apcu-panel.php
+    mode: pull
+    rsync_opts: --no-owner,--no-group # ignore owner and group when rsync to public directories
+  delegate_to: "{{ inventory_hostname }}"
+  with_items: "{{ nginx_sites[inventory_hostname] | default([]) }}"
+  notify: update permissions
+  tags:
+    - php
+    - apc
