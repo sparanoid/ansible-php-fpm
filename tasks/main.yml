@@ -1,5 +1,5 @@
 #
-# setup PHP and PHP-FPM with APCu support
+# setup php and php-fpm with apcu support
 #
 - name: role brief
   debug:
@@ -11,7 +11,7 @@
       - php_slack_script_dest - {{ php_slack_script_dest }}
   tags: debug
 
-- name: install PHP
+- name: install php
   yum:
     name: "{{ item }}"
     state: present
@@ -19,7 +19,7 @@
   tags:
     - php
 
-- name: set PHP parameters
+- name: set php parameters
   lineinfile:
     dest: /etc/php.ini
     regexp: "^{{ item.param }}"
@@ -35,7 +35,7 @@
     - php
     - php_config
 
-- name: set PHP OpCache parameters
+- name: set php OpCache parameters
   lineinfile:
     dest: /etc/php.d/10-opcache.ini
     regexp: "^{{ item.param }}"
@@ -54,7 +54,7 @@
     - php
     - php_config
 
-- name: set PHP-FPM parameters
+- name: set php-fpm parameters
   lineinfile:
     dest: /etc/php-fpm.conf
     regexp: "^{{ item.param }}"
@@ -116,7 +116,7 @@
 #
 # How many fpm processes at the moment:
 # pgrep -c php-fpm
-- name: set PHP-FPM pool parameters
+- name: set php-fpm pool parameters
   lineinfile:
     dest: /etc/php-fpm.d/www.conf
     regexp: '^{{ item.param|replace("[", "\[")|replace("]", "\]") }} *?='
@@ -148,14 +148,14 @@
     - fpm
     - fpm_config
 
-- name: set PHP-FPM session parameters (files)
+- name: set php-fpm session parameters (files)
   lineinfile:
     dest: /etc/php-fpm.d/www.conf
     regexp: '^{{ item.param|replace("[", "\[")|replace("]", "\]") }} *?='
     insertafter: '^;{{ item.param|replace("[", "\[")|replace("]", "\]") }} *?='
     line: "{{ item.param }} = {{ item.value }}"
   with_items:
-    # Use files for PHP sessions
+    # Use files for php sessions
     - { param: 'php_value[session.save_handler]', value: 'files' }
     - { param: 'php_value[session.save_path]', value: '/var/lib/php-fpm-nginx/session' }
   register: fpm_config_updated
@@ -167,14 +167,14 @@
     - fpm
     - fpm_config
 
-- name: set PHP-FPM session parameters (redis)
+- name: set php-fpm session parameters (redis)
   lineinfile:
     dest: /etc/php-fpm.d/www.conf
     regexp: '^{{ item.param|replace("[", "\[")|replace("]", "\]") }} *?='
     insertafter: '^;{{ item.param|replace("[", "\[")|replace("]", "\]") }} *?='
     line: "{{ item.param }} = {{ item.value }}"
   with_items:
-    # Use Redis for PHP sessions
+    # Use Redis for php sessions
     # redis(30u) is required for this config
     - { param: 'php_value[session.save_handler]', value: 'redis' }
     - { param: 'php_value[session.save_path]', value: 'tcp://127.0.0.1:6379' }
@@ -188,7 +188,7 @@
     - fpm_config
 
 # NOTE: Disable multiple pools support since we switched from sock to TCP listen
-# - name: copy PHP-FPM pool configs
+# - name: copy php-fpm pool configs
 #   synchronize: src=/etc/php-fpm.d/www.conf
 #                dest=/etc/php-fpm.d/www{{ item }}.conf
 #                mode=pull
@@ -200,7 +200,7 @@
 #     - fpm
 #     - fpm_config
 # #
-# - name: rename PHP-FPM pool name
+# - name: rename php-fpm pool name
 #   lineinfile:
 #     dest: /etc/php-fpm.d/www{{ item }}.conf
 #     # match all [www**]
@@ -213,7 +213,7 @@
 #     - fpm
 #     - fpm_config
 
-- name: create PHP-FPM session / cache directories
+- name: create php-fpm session / cache directories
   file:
     path: /var/lib/php-fpm-nginx/{{ item }}/
     state: directory
@@ -226,7 +226,7 @@
     - php
     - fpm
 
-- name: enable PHP-FPM
+- name: enable php-fpm
   service:
     name: php-fpm
     state: started
