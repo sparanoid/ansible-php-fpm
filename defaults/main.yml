@@ -1,0 +1,24 @@
+---
+php_packages:
+  - php71u
+  - php71u-fpm
+  - php71u-gd
+  - php71u-intl
+  - php71u-json
+  - php71u-mbstring
+  - php71u-mysqlnd
+  - php71u-opcache
+  - php71u-xml
+  - php71u-pecl-apcu
+  - php71u-pecl-apcu-panel
+  - php71u-pecl-imagick
+  - php71u-pecl-redis
+  - pear1u
+php_fpm_pools:
+  - 0
+  - 1
+php_fpm_session_type: file
+php_slack_channel: "#status"
+php_slack_username: server-bot
+php_slack_hook: https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX
+php_slack_script_dest: /srv/scripts/
