@@ -35,7 +35,7 @@
     - php
     - php_config
 
-- name: set php OpCache parameters
+- name: set php opcache parameters
   lineinfile:
     dest: /etc/php.d/10-opcache.ini
     regexp: "^{{ item.param }}"
@@ -81,7 +81,7 @@
     - fpm
     - fpm_cron
 
-- name: add FPM memory monitor
+- name: add fpm memory monitor
   template:
     src: fpm-mem-check.sh
     dest: "{{ php_slack_script_dest }}/fpm-mem-check.sh"
@@ -92,7 +92,7 @@
     - fpm
     - fpm_cron
 
-- name: add FPM memory monitor to cron
+- name: add fpm memory monitor to cron
   cron:
     name: monitor php-fpm memory usage
     minute: "*"
@@ -255,7 +255,6 @@
     group: "{{ http_user }}"
     mode: 0644
   with_items: "{{ nginx_sites[inventory_hostname] | default([]) }}"
-  notify: update permissions
   tags:
     - php
     - opcache
@@ -268,7 +267,6 @@
     rsync_opts: --no-owner,--no-group # ignore owner and group when rsync to public directories
   delegate_to: "{{ inventory_hostname }}"
   with_items: "{{ nginx_sites[inventory_hostname] | default([]) }}"
-  notify: update permissions
   tags:
     - php
     - apc
