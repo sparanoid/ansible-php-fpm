@@ -1,18 +1,18 @@
 ---
 php_packages:
-  - php71u
-  - php71u-fpm
-  - php71u-gd
-  - php71u-intl
-  - php71u-json
-  - php71u-mbstring
-  - php71u-mysqlnd
-  - php71u-opcache
-  - php71u-xml
-  - php71u-pecl-apcu
-  - php71u-pecl-apcu-panel
-  - php71u-pecl-imagick
-  - php71u-pecl-redis
+  - php72u
+  - php72u-fpm
+  - php72u-gd
+  - php72u-intl
+  - php72u-json
+  - php72u-mbstring
+  - php72u-mysqlnd
+  - php72u-opcache
+  - php72u-xml
+  - php72u-pecl-apcu
+  - php72u-pecl-apcu-panel
+  - php72u-pecl-imagick
+  - php72u-pecl-redis
   - pear1u
 php_fpm_pools:
   - 0
