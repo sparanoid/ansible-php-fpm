@@ -30,6 +30,7 @@
     - { param: 'post_max_size', value: '16M' }
     - { param: 'upload_max_filesize', value: '16M' }
     - { param: 'session.gc_maxlifetime', value: '86401' }
+    - { param: 'max_execution_time', value: '180' }
   tags:
     - php
     - php_config
