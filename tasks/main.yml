@@ -45,7 +45,7 @@
     - { param: 'opcache.memory_consumption', value: '128' }
     - { param: 'opcache.interned_strings_buffer', value: '8' }
     - { param: 'opcache.max_accelerated_files', value: '4000' }
-    - { param: 'opcache.revalidate_freq', value: '60' }
+    - { param: 'opcache.revalidate_freq', value: '5' }
     - { param: 'opcache.save_comments', value: '0' }
     - { param: 'opcache.fast_shutdown', value: '1' }
     - { param: 'opcache.enable_file_override', value: '1' }
