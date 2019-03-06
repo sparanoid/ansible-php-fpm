@@ -42,9 +42,9 @@
     insertafter: "^;{{ item.param }}"
     line: "{{ item.param }} = {{ item.value }}"
   with_items:
-    - { param: 'opcache.memory_consumption', value: '128' }
+    - { param: 'opcache.memory_consumption', value: '512' }
     - { param: 'opcache.interned_strings_buffer', value: '8' }
-    - { param: 'opcache.max_accelerated_files', value: '4000' }
+    - { param: 'opcache.max_accelerated_files', value: '50000' }
     - { param: 'opcache.revalidate_freq', value: '5' }
     - { param: 'opcache.save_comments', value: '0' }
     - { param: 'opcache.fast_shutdown', value: '1' }
