@@ -22,3 +22,43 @@ php_slack_channel: "#status"
 php_slack_username: server-bot
 php_slack_hook: https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX
 php_slack_script_dest: /srv/scripts/
+php_params:
+  - { param: 'cgi.fix_pathinfo', value: '0' }
+  - { param: 'expose_php', value: 'Off' }
+  - { param: 'post_max_size', value: '16M' }
+  - { param: 'upload_max_filesize', value: '16M' }
+  - { param: 'session.gc_maxlifetime', value: '86401' }
+  - { param: 'max_execution_time', value: '180' }
+php_opcache_params:
+  - { param: 'opcache.memory_consumption', value: '512' }
+  - { param: 'opcache.interned_strings_buffer', value: '8' }
+  - { param: 'opcache.max_accelerated_files', value: '50000' }
+  - { param: 'opcache.revalidate_freq', value: '5' }
+  - { param: 'opcache.save_comments', value: '0' }
+  - { param: 'opcache.fast_shutdown', value: '1' }
+  - { param: 'opcache.enable_file_override', value: '1' }
+  - { param: 'opcache.error_log', value: '/var/log/php-fpm/php-opcache.error.log' }
+php_fpm_params:
+  - { param: 'error_log', value: '/var/log/php-fpm/error.log' }
+  - { param: 'log_level', value: 'error' }
+  - { param: 'emergency_restart_threshold', value: '10' }
+  - { param: 'emergency_restart_interval', value: '1m' }
+  - { param: 'process_control_timeout', value: '5' }
+php_fpm_pool_params:
+  - { param: 'listen', value: '127.0.0.1:9000' }
+  - { param: 'listen.owner', value: '{{ http_user }}' }
+  - { param: 'listen.group', value: '{{ http_user }}' }
+  - { param: 'user', value: '{{ http_user }}' }
+  - { param: 'group', value: '{{ http_user }}' }
+  - { param: 'pm', value: 'dynamic' }
+  - { param: 'pm.max_children', value: '640' }
+  - { param: 'pm.start_servers', value: '12' }
+  - { param: 'pm.min_spare_servers', value: '12' }
+  - { param: 'pm.max_spare_servers', value: '24' }
+  - { param: 'pm.process_idle_timeout', value: '10s' }
+  - { param: 'pm.max_requests', value: '500' }
+  - { param: 'pm.status_path', value: '/fpm-status-$pool' }
+  - { param: 'ping.path', value: '/ping-$pool' }
+  - { param: 'slowlog', value: '/var/log/php-fpm/$pool-slow.log' }
+  # - { param: 'request_slowlog_timeout', value: '24s' }
+  - { param: 'php_value[soap.wsdl_cache_dir]', value: '/var/lib/php-fpm-nginx/wsdlcache' }
