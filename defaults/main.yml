@@ -1,6 +1,7 @@
 ---
 php_packages:
   - php72u
+  - php72u-bcmath
   - php72u-fpm
   - php72u-gd
   - php72u-intl
