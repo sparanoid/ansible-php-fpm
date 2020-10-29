@@ -1,22 +1,26 @@
 ---
 php_packages:
-  - mod_php73
-  - php73-cli
-  - php73-common
-  - php73-bcmath
-  - php73-fpm
-  - php73-gd
-  - php73-intl
-  - php73-json
-  - php73-mbstring
-  - php73-mysqlnd
-  - php73-opcache
-  - php73-pdo
-  - php73-pecl-apcu
-  - php73-pecl-apcu-panel
-  - php73-pecl-imagick
-  - php73-pecl-redis
-  - php73-xml
+  - mod_php74
+  - php74-cli
+  - php74-common
+  - php74-bcmath
+  - php74-fpm
+  - php74-gd
+  - php74-intl
+  - php74-json
+  - php74-mbstring
+  - php74-mysqlnd
+  - php74-opcache
+  - php74-pdo
+  - php74-pecl-apcu
+  - php74-pecl-apcu-panel
+  - php74-pecl-igbinary
+  - php74-pecl-imagick
+  - php74-pecl-msgpack
+  - php74-pecl-redis
+  - php74-pecl-zip
+  - php74-process
+  - php74-xml
   - pear1u
 php_fpm_pools:
   - 0
